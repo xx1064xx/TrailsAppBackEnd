@@ -24,6 +24,11 @@ namespace TrailsAppRappi.Controllers
         public string Email { get; set; }
         public string Password { get; set; }
     }
+    public class UserInfo
+    {
+        public string Firstname { get; set; }
+        public string Lastname { get; set; }
+    }
     public class UserToken
     {
         public string Email { get; set; }
@@ -90,17 +95,28 @@ namespace TrailsAppRappi.Controllers
             return Unauthorized();
         }
 
+
         [Authorize]
         [HttpGet("getCurrentUser")]
         public IActionResult getCurrentUser()
         {
 
+            Claim subClaim = User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
+            string userId = Convert.ToString(subClaim.Value);
+
             using var context = contextFactory.CreateReadOnlyContext();
 
             try
             {
-                var userId = GetUserIdFromToken();
-                var user = context.Users.FirstOrDefault(u => u.UserId == userId);
+               
+                UserInfo user = context.Users
+                    .Where(u => u.UserId.ToString() == userId)
+                    .Select(s => new UserInfo
+                    {
+                        Firstname = s.FirstName,
+                        Lastname = s.LastName
+                    })
+                    .FirstOrDefault();
                 return Ok(user);
             }
             catch (Exception ex)
@@ -108,6 +124,35 @@ namespace TrailsAppRappi.Controllers
                 return BadRequest();
             }
 
+        }
+
+        [Authorize]
+        [HttpDelete("delete")]
+        public IActionResult DeleteUser()
+        {
+
+            using var context = contextFactory.CreateContext();
+
+            var userId = GetUserIdFromToken();
+
+            if (userId != null)
+            {
+                var user = context.Users.FirstOrDefault(u => u.UserId == userId);
+
+                if (user != null)
+                {
+
+                    // Lösche den Benutzer
+                    context.Users.Remove(user);
+
+                    context.SaveChanges();
+                    return Ok("Benutzer erfolgreich gelöscht");
+                }
+
+                return NotFound("Benutzer nicht gefunden");
+            }
+
+            return Unauthorized("Ungültiges Token");
         }
 
         private Guid? GetUserIdFromToken()

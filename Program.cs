@@ -1,6 +1,10 @@
 using TrailsAppRappi.Interfaces;
 using TrailsAppRappi.Sampledata;
 using TrailsAppRappi.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using TrailsAppRappi.Controllers;
+using System.Text;
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 var builder = WebApplication.CreateBuilder(args);
@@ -10,12 +14,35 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy =>
                       {
-                          policy.WithOrigins("*") // Replace with your specific origin(s)
+                          policy.WithOrigins("*")
                          .AllowAnyMethod()
                          .AllowAnyHeader();
 
                       });
 });
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(o =>
+    {
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+
+            ValidIssuer = JwtConfiguration.ValidIssuer,
+            ValidAudience = JwtConfiguration.ValidAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(
+               Encoding.UTF8.GetBytes(JwtConfiguration.IssuerSigningKey)),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
 
 // Add services to the container.
 

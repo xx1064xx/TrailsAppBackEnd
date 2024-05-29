@@ -11,5 +11,6 @@
         public string? Salt { get; set; }
 
 
+        public ICollection<Trail> Trails { get; set; }
     }
 }
