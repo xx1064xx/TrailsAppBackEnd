@@ -133,20 +133,39 @@ namespace TrailsAppRappi.Controllers
 
             using var context = contextFactory.CreateContext();
 
-            var userId = GetUserIdFromToken();
+            Claim subClaim = User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
+            string userId = Convert.ToString(subClaim.Value);
 
             if (userId != null)
             {
-                var user = context.Users.FirstOrDefault(u => u.UserId == userId);
+                User user = context.Users.FirstOrDefault(u => u.UserId.ToString() == userId);
 
                 if (user != null)
                 {
+                    try
+                    {
+                        List<Trail> trailsFromUser = new List<Trail>();
 
-                    // Lösche den Benutzer
-                    context.Users.Remove(user);
+                        trailsFromUser = context.Trails
+                            .Where(x => x.UserId.ToString() == userId)
+                            .ToList();
 
-                    context.SaveChanges();
-                    return Ok("Benutzer erfolgreich gelöscht");
+                        foreach (Trail trail in trailsFromUser)
+                        {
+                            context.Trails.Remove(trail);
+                        }
+
+
+                        context.Users.Remove(user);
+
+                        context.SaveChanges();
+                        return Ok();
+                    }
+                    catch
+                    {
+                        return NotFound("Something went wrong");
+                    }
+                    
                 }
 
                 return NotFound("Benutzer nicht gefunden");
