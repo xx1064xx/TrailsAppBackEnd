@@ -73,8 +73,8 @@ namespace TrailsAppRappi.Controllers
         }
 
         [Authorize]
-        [HttpGet("getTrail")]
-        public IActionResult getTrail()
+        [HttpGet("getTrails")]
+        public IActionResult getTrails()
         {
 
             Claim subClaim = User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
@@ -93,6 +93,8 @@ namespace TrailsAppRappi.Controllers
                     Name = s.Name,
                     DateAndTime = s.DateAndTime,
                 })
+                .OrderBy(x => x.DateAndTime)
+                .ThenBy(x => x.Name)
                 .ToList();
 
             if (trails != null)
@@ -100,30 +102,46 @@ namespace TrailsAppRappi.Controllers
                 return Ok(trails);
             }
 
-            /*
+            
+
+            return BadRequest();
+        }
+
+        [Authorize]
+        [HttpGet("getTrail/{trailId}")]
+        public IActionResult getTrail(string trailId)
+        {
+
+            Claim subClaim = User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier);
+            string userId = Convert.ToString(subClaim.Value);
+
             using var context = contextFactory.CreateContext();
 
-            Trail trailInDb = context.Trails.FirstOrDefault(user => user.Email == login.Email);
 
-            if (userInDb == null)
+            if (trailId != null)
             {
-                string salt;
+                TrailToGet trail = context.Trails
+                    .Where(u => u.TrailId.ToString() == trailId && u.UserId.ToString() == userId)
+                    .Select(s => new TrailToGet
+                    {
+                        TrailId = s.TrailId,
+                        Location = s.Location,
+                        Name = s.Name,
+                        DateAndTime = s.DateAndTime,
+                    })
+                    .FirstOrDefault();
 
-                string pwHash = HashGenerator.GenerateHash(login.Password, out salt);
-                User newUser = new User()
+                if (trail != null)
                 {
-                    FirstName = login.Firstname,
-                    LastName = login.Lastname,
-                    Email = login.Email,
-                    Password = pwHash,
-                    Salt = salt,
-                };
-                context.Users.Add(newUser);
 
-                context.SaveChanges();
+                    
+                    return Ok(trail);
+                }
 
-                return Ok(CreateToken(newUser.UserId, newUser.Email));
-            }*/
+                return NotFound("Trail not found");
+            }
+
+
 
             return BadRequest();
         }

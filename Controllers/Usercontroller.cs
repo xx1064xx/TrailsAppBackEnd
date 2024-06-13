@@ -110,7 +110,7 @@ namespace TrailsAppRappi.Controllers
             {
                
                 UserInfo user = context.Users
-                    .Where(u => u.UserId.ToString() == userId)
+                    .Where(u => u.UserId.ToString().ToLower() == userId)
                     .Select(s => new UserInfo
                     {
                         Firstname = s.FirstName,
